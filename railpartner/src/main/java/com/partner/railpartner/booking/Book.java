@@ -20,35 +20,30 @@ package com.partner.railpartner.booking;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
-
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
+
+import com.partner.railpartner.core.AbstractEntity;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-
-import com.partner.railpartner.core.AbstractEntity;
-
 @Entity
 @Getter
 @Setter
 @ToString(exclude = "items")
-@Table(name = "RBOrder")
+@Table(name = "RailBook")
 public class Book extends AbstractEntity {
 
 	private final LocalDateTime bookingDate;
 
 	private Status status;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)//
-	private Set<Item> items = new HashSet<Item>();
+	
+	//@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)//
+	
 
 	/**
 	 * Creates a new {@link Book} for the given {@link Item}s and {@link Location}.
@@ -58,9 +53,10 @@ public class Book extends AbstractEntity {
 	 */
 	public Book(Collection<Item> items) {
 
-		this.status = Status.PAYMENT_EXPECTED;
-		this.items.addAll(items);
+		this.status = Status.BOOKED;
+		//ßthis.items.addAll(items);
 		this.bookingDate = LocalDateTime.now();
+		
 	}
 
 	/**
@@ -76,6 +72,10 @@ public class Book extends AbstractEntity {
 		this(new Item[0]);
 	}
 
+	public Book(Long id) {
+		super(id);
+		this.bookingDate = null;
+	}
 	
 
 	/**
@@ -84,58 +84,42 @@ public class Book extends AbstractEntity {
 	public void markPaid() {
 
 		if (isPaid()) {
-			throw new IllegalStateException("Already paid order cannot be paid again!");
+			throw new IllegalStateException("Already paid  cannot be paid again!");
 		}
 
 		this.status = Status.PAID;
 	}
 
+	
 	/**
-	 * Marks the {@link Book} as in preparation.
+	 * Marks the {@link Book} as payed.
 	 */
-	public void markInPreparation() {
+	public void markBooked() {
 
-		if (this.status != Status.PAID) {
-			throw new IllegalStateException(String.format("Order must be in state payed to start preparation! "
-					+ "Current status: %s", this.status));
+		if (isPaid()) {
+			throw new IllegalStateException("Already booked cannot be booked again!");
 		}
 
-		this.status = Status.PREPARING;
+		this.status = Status.PAID;
 	}
-
-	/**
-	 * Marks the {@link Book} as prepared.
-	 */
-	public void markPrepared() {
-
-		if (this.status != Status.PREPARING) {
-			throw new IllegalStateException(String.format("Cannot mark Order prepared that is currently not "
-					+ "preparing! Current status: %s.", this.status));
-		}
-
-		this.status = Status.READY;
-	}
-
+	
 	/**
 	 * Returns whether the {@link Book} has been paid already.
 	 * 
 	 * @return
 	 */
 	public boolean isPaid() {
-		return !this.status.equals(Status.PAYMENT_EXPECTED);
+		return !this.status.equals(Status.PAID);
 	}
-
+	
+	
 	/**
-	 * Returns if the {@link Book} is ready to be taken.
+	 * Returns whether the {@link Book} has been paid already.
 	 * 
 	 * @return
 	 */
-	public boolean isReady() {
-		return this.status.equals(Status.READY);
-	}
-
-	public boolean isTaken() {
-		return this.status.equals(Status.TAKEN);
+	public boolean isBooked() {
+		return !this.status.equals(Status.BOOKED);
 	}
 
 	/**
@@ -148,26 +132,12 @@ public class Book extends AbstractEntity {
 		/**
 		 * Placed, but not payed yet. Still changeable.
 		 */
-		PAYMENT_EXPECTED,
+		BOOKED,
 
 		/**
-		 * {@link Order} was payed. No changes allowed to it anymore.
+		 * {@link Booking} was payed. No changes allowed to it anymore.
 		 */
-		PAID,
-
-		/**
-		 * The {@link Order} is currently processed.
-		 */
-		PREPARING,
-
-		/**
-		 * The {@link Order} is ready to be picked up by the customer.
-		 */
-		READY,
-
-		/**
-		 * The {@link Order} was completed.
-		 */
-		TAKEN;
+		PAID
+		
 	}
 }
